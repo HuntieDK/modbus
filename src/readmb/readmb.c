@@ -35,7 +35,7 @@ static void pr_div(int32_t value, int div)
 	printf("%s ", p);
 }
 
-static void pr_reg(modbus_t *ctx, char type, const char* addr_str)
+static int pr_reg(modbus_t *ctx, char type, const char* addr_str)
 {
 	int16_t reg[2];
 	int addr, cnt;
@@ -51,8 +51,8 @@ static void pr_reg(modbus_t *ctx, char type, const char* addr_str)
 	cnt = (type == 's') ? 1 : 2;
 	if (modbus_read_registers(ctx, addr, cnt, reg) < 0) {
 		fprintf(stderr,"Read register %d failed: %s\n", addr, modbus_strerror(errno));
-		fputs("? ", stdout);
-		return;
+		fputs("NOK ", stdout);
+		return 1;
 	}
 	switch (type) {
 	case 's':
@@ -65,6 +65,7 @@ static void pr_reg(modbus_t *ctx, char type, const char* addr_str)
 		printf("%f ", *(float*)&reg[0]);
 		break;
 	}
+	return 0;
 }
 
 static void usage()
@@ -82,6 +83,7 @@ int main(int argc, char* argv[])
 	int bits = 8;
 	int stop = 1;
 	char par = 'N';
+	int err = 0;
 
 	int opt;
 	while ((opt = getopt(argc, argv, "a:")) != -1) {
@@ -110,17 +112,19 @@ int main(int argc, char* argv[])
 		case 's':	/* short (16) */
 		case 'i':	/* int (32) */
 		case 'f':	/* float (32) */
-			pr_reg(ctx, argv[i][0], argv[i]+1);
+			err |= pr_reg(ctx, argv[i][0], argv[i]+1);
 			break;
 		default:
 			fprintf(stderr, "Register type %c not supported\n", argv[i][0]);
+			fputs("NOK ", stdout);
 			break;
 		}
 	}
-	puts("");
+	puts(err ? "NOK" : "OK");
+
 
 	modbus_close(ctx);
 	modbus_free(ctx);
 
-	exit(0);
+	return err;
 }
