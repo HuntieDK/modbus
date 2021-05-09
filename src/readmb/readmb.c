@@ -1,5 +1,5 @@
 /*
- * modbus.c - a very small MODBUS register query application
+ * readmb.c - a very small MODBUS register query application
  */
 
 #include <stdio.h>
